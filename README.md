@@ -4,9 +4,9 @@
 
 ## Goals
 
-- [ ] data representation of the sudoku board
-- [ ] visual representation
-- [ ] grid system to identify cells and make moves
+- [X] data representation of the sudoku board
+- [X] visual representation
+- [X] grid system to identify cells and make moves
 - [ ] user can input numbers and erase numbers (but cannot overwrite those from the initial board)
 - [ ] player-supplied notes per-cell (scratchpad)
 - [ ] warn player on illegal moves
