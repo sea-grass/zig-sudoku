@@ -43,78 +43,72 @@ pub const Sudoku = struct {
         return self.board[i];
     }
 
-    pub fn print(self: Sudoku) !void {
-        const stdout = std.io.getStdOut().writer();
-
+    pub fn print(self: Sudoku, writer: anytype) !void {
         const len = self.n * self.n;
 
         var row: usize = 0;
         while (row < len) : (row += 1) {
-            if (row == 0) try self.printHeader();
-            try self.printRowColumn(row);
+            if (row == 0) try self.printHeader(writer);
+            try self.printRowColumn(writer, row);
 
             var col: usize = 0;
             while (col < len) : (col += 1) {
-                try self.printCell(row, col);
+                try self.printCell(writer, row, col);
             }
-            try stdout.print("\n", .{});
+            try writer.print("\n", .{});
 
-            if (row != len - 1) try self.printRowDivider();
+            if (row != len - 1) try self.printRowDivider(writer);
         }
     }
 
-    fn printCell(self: Sudoku, row: usize, col: usize) !void {
-        const stdout = std.io.getStdOut().writer();
+    fn printCell(self: Sudoku, writer: anytype, row: usize, col: usize) !void {
         const len = self.n * self.n;
         const i = row * len + col;
         switch (self.board[i]) {
             0 => {
-                try stdout.print(" .", .{});
+                try writer.print(" .", .{});
             },
             else => |val| {
-                try stdout.print(" {d}", .{val});
+                try writer.print(" {d}", .{val});
             },
         }
         if (col != len - 1) {
-            try stdout.print(" :", .{});
+            try writer.print(" :", .{});
         }
     }
 
-    fn printHeader(self: Sudoku) !void {
-        const stdout = std.io.getStdOut().writer();
+    fn printHeader(self: Sudoku, writer: anytype) !void {
         const num_cols = self.n * self.n;
 
-        try stdout.print("    ", .{});
+        try writer.print("    ", .{});
         {
             var col: usize = 0;
             while (col < num_cols) : (col += 1) {
                 if (col == num_cols - 1) {
-                    try stdout.print(" {d}", .{col});
-                } else try stdout.print(" {d}  ", .{col});
+                    try writer.print(" {d}", .{col});
+                } else try writer.print(" {d}  ", .{col});
             }
-            try stdout.print("\n", .{});
+            try writer.print("\n", .{});
         }
 
-        try stdout.print("    ", .{});
+        try writer.print("    ", .{});
         {
             var col: usize = 0;
             while (col < num_cols) : (col += 1) {
-                try stdout.print(" *  ", .{});
+                try writer.print(" *  ", .{});
             }
-            try stdout.print("\n", .{});
+            try writer.print("\n", .{});
         }
     }
 
-    fn printRowColumn(_: Sudoku, row: ?usize) !void {
-        const stdout = std.io.getStdOut().writer();
+    fn printRowColumn(_: Sudoku, writer: anytype, row: ?usize) !void {
         if (row) |x| {
-            try stdout.print(" {d} *", .{x});
-        } else try stdout.print("   *", .{});
+            try writer.print(" {d} *", .{x});
+        } else try writer.print("   *", .{});
     }
 
-    fn printRowDivider(_: Sudoku) !void {
-        const stdout = std.io.getStdOut().writer();
-        try stdout.print("\n", .{});
+    fn printRowDivider(_: Sudoku, writer: anytype) !void {
+        try writer.print("\n", .{});
     }
 
     test "init" {
@@ -147,7 +141,7 @@ pub const Sudoku = struct {
             }
         }
 
-        try sudoku.print();
+        try sudoku.print(std.io.getStdOut().writer());
     }
 
     test "set" {
