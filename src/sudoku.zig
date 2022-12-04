@@ -1,22 +1,32 @@
 const std = @import("std");
 
+fn cell(comptime T: type) type {
+    return struct {
+        value: T,
+        user: bool,
+    };
+}
+
 const SudokuError = error{
     UnsupportedBoardSize,
     InvalidValue,
     IndexOutOfBounds,
+    CannotOverwritePuzzleValues,
 };
 
 pub const Sudoku = struct {
+    const Cell = cell(u4);
+
     allocator: std.mem.Allocator,
     n: u8,
-    board: []u4,
+    board: []Cell,
     pub fn init(allocator: std.mem.Allocator, n: u8) !Sudoku {
         if (n != 3) return SudokuError.UnsupportedBoardSize;
 
         const num_cells = n * n * n * n;
 
-        var board = try allocator.alloc(u4, num_cells);
-        std.mem.set(u4, board, 0);
+        var board = try allocator.alloc(Cell, num_cells);
+        std.mem.set(Cell, board, Cell{ .value = 0, .user = false });
 
         return .{
             .allocator = allocator,
@@ -31,19 +41,32 @@ pub const Sudoku = struct {
 
     pub fn set(self: *Sudoku, row: usize, col: usize, val: u4) !void {
         if (val > self.n * self.n) return SudokuError.InvalidValue;
+
         const len = self.n * self.n;
         const i = row * len + col;
-        self.board[i] = val;
+        if (self.board[i].value != 0 and self.board[i].user == false) return SudokuError.CannotOverwritePuzzleValues;
+
+        self.board[i].value = val;
     }
 
     pub fn get(self: *Sudoku, row: usize, col: usize) !u4 {
         const len = self.n * self.n;
         if (row >= len or col >= len) return SudokuError.IndexOutOfBounds;
         const i = row * len + col;
-        return self.board[i];
+        return self.board[i].value;
     }
 
-    pub fn reset(_: *Sudoku) void {}
+    pub fn reset(self: *Sudoku) void {
+        // todo: for demo
+        const row = 2;
+        const col = 2;
+        const len = self.n * self.n;
+        const i = row * len + col;
+        self.board[i] = Cell{
+            .value = 9,
+            .user = false,
+        };
+    }
 
     pub fn print(self: Sudoku, writer: anytype) !void {
         const len = self.n * self.n;
@@ -66,7 +89,7 @@ pub const Sudoku = struct {
     fn printCell(self: Sudoku, writer: anytype, row: usize, col: usize) !void {
         const len = self.n * self.n;
         const i = row * len + col;
-        switch (self.board[i]) {
+        switch (self.board[i].value) {
             0 => {
                 try writer.print(" .", .{});
             },

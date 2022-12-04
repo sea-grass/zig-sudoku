@@ -23,7 +23,7 @@ pub fn main() !void {
         switch (state) {
             .Title => {
                 try stdout.print("Sudoku .\nNew game? (Y/n): ", .{});
-                if (try readLine(stdin, &buffer)) |line| {
+                if (readLine(stdin, &buffer)) |line| {
                     if (line.len == 0 or std.mem.eql(u8, line, "y") or std.mem.eql(u8, line, "Y")) {
                         state = .StartGame;
                     } else if (std.mem.eql(u8, line, "n") or std.mem.eql(u8, line, "N")) {
@@ -41,9 +41,19 @@ pub fn main() !void {
             },
             .MakeGuess => {
                 try sudoku.print(stdout);
-                if (try readLine(stdin, &buffer)) |line| {
-                    const move = parseMove(line);
-                    try stdout.print("Move: {any}\n", .{move});
+                if (readLine(stdin, &buffer)) |line| {
+                    if (std.mem.eql(u8, line, "q") or std.mem.eql(u8, line, "Q")) {
+                        state = .Quit;
+                    } else {
+                        const move = parseMove(line) catch blk: {
+                            try stdout.print("invalid move :(\n", .{});
+                            break :blk null;
+                        };
+                        if (move) |m| {
+                            try stdout.print("Move: {any}\n", .{m});
+                            try sudoku.set(m.row, m.col, m.value);
+                        }
+                    }
                 } else {
                     try stdout.print("huh?\n", .{});
                 }
@@ -53,7 +63,7 @@ pub fn main() !void {
     }
 }
 
-fn readLine(reader: anytype, buffer: []u8) !?[]const u8 {
+fn readLine(reader: anytype, buffer: []u8) ?[]const u8 {
     return reader.readUntilDelimiterOrEof(buffer, '\n') catch blk: {
         reader.skipUntilDelimiterOrEof('\n') catch {};
         break :blk undefined;
@@ -69,6 +79,7 @@ const Move = struct {
 fn parseMove(line: []const u8) !Move {
     var tokens = std.mem.split(u8, line, " ");
 
+    // todo: fix segfault when input is too long
     const move = .{
         .row = if (tokens.next()) |row| try std.fmt.parseUnsigned(usize, row, 10) else return error.InvalidMove,
         .col = if (tokens.next()) |col| try std.fmt.parseUnsigned(usize, col, 10) else return error.InvalidMove,

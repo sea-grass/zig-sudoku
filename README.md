@@ -7,7 +7,7 @@
 - [X] data representation of the sudoku board
 - [X] visual representation
 - [X] grid system to identify cells and make moves
-- [ ] user can input numbers and erase numbers (but cannot overwrite those from the initial board)
+- [X] user can input numbers and erase numbers (but cannot overwrite those from the initial board)
 - [ ] player-supplied notes per-cell (scratchpad)
 - [ ] warn player on illegal moves
 - [ ] congratulate player when the sudoku is solved
