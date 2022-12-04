@@ -24,3 +24,4 @@
 - [ ] logic-based sudoku solver using human sudoku-solving techniques (like hidden double, hidden triple, swordfish, jellyfish, etc.)
 - [ ] wasm api for sudoku engine (generate sudokus, track board state and validate moves, solve sudokus)
 - [ ] expose and visualize internal data structures like information concerning move validation as an accessibility option
+- [ ] raw terminal UI instead of REPL UI
