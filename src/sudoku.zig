@@ -43,6 +43,8 @@ pub const Sudoku = struct {
         return self.board[i];
     }
 
+    pub fn reset(_: *Sudoku) void {}
+
     pub fn print(self: Sudoku, writer: anytype) !void {
         const len = self.n * self.n;
 
