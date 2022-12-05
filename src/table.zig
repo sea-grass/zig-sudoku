@@ -64,3 +64,35 @@ test "Table" {
     const stdout = std.io.getStdOut().writer();
     try stdout.print("\n{s}\n", .{list.items});
 }
+
+test "Sudoku" {
+    const allocator = std.testing.allocator;
+    var list = std.ArrayList(u8).init(allocator);
+    defer list.deinit();
+
+    try write(list.writer(), allocator, &.{
+        @as([]const []const u8, &.{
+            "name",
+            "history grade",
+            "art grade",
+        }),
+        @as([]const []const u8, &.{
+            "Billy",
+            "42",
+            "92",
+        }),
+        @as([]const []const u8, &.{
+            "Josh",
+            "51",
+            "83",
+        }),
+        @as([]const []const u8, &.{
+            "Brenda",
+            "58",
+            "72",
+        }),
+    });
+
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("\n{s}\n", .{list.items});
+}
