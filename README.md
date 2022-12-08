@@ -8,17 +8,18 @@
 - [X] visual representation
 - [X] grid system to identify cells and make moves
 - [X] user can input numbers and erase numbers (but cannot overwrite those from the initial board)
+- [ ] load puzzle from file
+- [ ] generate printable document from a sudoku
 - [ ] player-supplied notes per-cell (scratchpad)
 - [ ] warn player on illegal moves
 - [ ] congratulate player when the sudoku is solved
-- [ ] generate printable document from a sudoku
+- [ ] brute-force (guess + backtrack) sudoku solver
 - [ ] generate random sudokus
 - [ ] human-readable random number seed (or classification) of a sudoku board
 - [ ] generate flag for "fun" sudokus
 - [ ] generate flag for entertainment sudokus (must only be one solution)
 - [ ] generate flag for difficulty level
 - [ ] user can specify their own seed
-- [ ] brute-force (guess + backtrack) sudoku solver
 - [ ] support n = 2 sudoku boards
 - [ ] support n > 3 sudoku boards
 - [ ] logic-based sudoku solver using human sudoku-solving techniques (like hidden double, hidden triple, swordfish, jellyfish, etc.)
