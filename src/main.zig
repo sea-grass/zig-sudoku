@@ -7,16 +7,46 @@ const std = @import("std");
 const Sudoku = @import("sudoku.zig").Sudoku;
 const ansi = @import("ansi.zig");
 
+const ArgError = error{
+    MissingFilePath,
+    UnknownArgument,
+};
+
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
-
-    var sudoku = try Sudoku.init(allocator, 3);
-    defer sudoku.deinit();
 
     const stdout = std.io.getStdOut().writer();
     const stdin = std.io.getStdIn().reader();
 
+    var input_file: []const u8 = "";
+
+    var args = try std.process.argsWithAllocator(allocator);
+    defer args.deinit();
+
+    if (args.skip()) {
+        while (args.next()) |arg| {
+            if (std.mem.eql(u8, arg, "-f")) {
+                if (args.next()) |path| {
+                    // todo: create absolute path
+                    input_file = path;
+                } else {
+                    return ArgError.MissingFilePath;
+                }
+            } else {
+                return ArgError.UnknownArgument;
+            }
+        }
+    }
+
+    var sudoku = try Sudoku.init(allocator, 3);
+    defer sudoku.deinit();
+
     var buffer: [8]u8 = undefined;
+
+    if (input_file.len > 0) {
+        try stdout.print("Loading sudoku from {s}. Press enter to continue.\n", .{input_file});
+        _ = readLine(stdin, &buffer);
+    }
 
     var state: enum {
         Title,
@@ -24,18 +54,23 @@ pub fn main() !void {
         StartGame,
         MakeGuess,
         ShowHelpText,
-    } = .Title;
+        LoadSudoku,
+    } = if (input_file.len > 0) .LoadSudoku else .Title;
 
     while (state != .Quit) {
         try stdout.print("{s}\n", .{ansi.screen_clear});
         try stdout.print("Sudoku\n\n", .{});
         switch (state) {
+            .LoadSudoku => {
+                // todo: load from file
+                state = .Title;
+            },
             .Title => {
                 try stdout.print("This is Sudoku.\nStart a new game? (Y/n): ", .{});
                 if (readLine(stdin, &buffer)) |line| {
                     if (line.len == 0 or std.mem.eql(u8, line, "y") or std.mem.eql(u8, line, "Y")) {
                         state = .StartGame;
-                    } else if (std.mem.eql(u8, line, "n") or std.mem.eql(u8, line, "N")) {
+                    } else if (std.mem.eql(u8, line, "n") or std.mem.eql(u8, line, "N") or std.mem.eql(u8, line, "q") or std.mem.eql(u8, line, "Q")) {
                         state = .Quit;
                     } else {
                         try stdout.print("Unknown choice.\n", .{});
