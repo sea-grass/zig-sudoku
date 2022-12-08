@@ -1,11 +1,20 @@
 const std = @import("std");
+const ansi = @import("ansi.zig");
 
-fn cell(comptime T: type) type {
-    return struct {
-        value: T,
-        user: bool,
-    };
-}
+const CellType = enum {
+    // An empty cell contains no data. Meaning, it has no user- or puzzle-supplied data.
+    empty,
+    // A user cell contains user-supplied data. Can be overwritten.
+    user,
+    // A puzzle cell contains puzzle-supplied data that cannot be changed.
+    puzzle,
+};
+
+const Cell = union(CellType) {
+    empty: void,
+    user: u4,
+    puzzle: u4,
+};
 
 const SudokuError = error{
     UnsupportedBoardSize,
@@ -15,8 +24,6 @@ const SudokuError = error{
 };
 
 pub const Sudoku = struct {
-    const Cell = cell(u4);
-
     allocator: std.mem.Allocator,
     n: u8,
     board: []Cell,
@@ -26,7 +33,7 @@ pub const Sudoku = struct {
         const num_cells = n * n * n * n;
 
         var board = try allocator.alloc(Cell, num_cells);
-        std.mem.set(Cell, board, Cell{ .value = 0, .user = false });
+        std.mem.set(Cell, board, .empty);
 
         return .{
             .allocator = allocator,
@@ -44,31 +51,49 @@ pub const Sudoku = struct {
 
         const len = self.n * self.n;
         const i = row * len + col;
-        if (self.board[i].value != 0 and self.board[i].user == false) return SudokuError.CannotOverwritePuzzleValues;
 
-        self.board[i].value = val;
+        switch (self.board[i]) {
+            .puzzle => {
+                return SudokuError.CannotOverwritePuzzleValues;
+            },
+            .empty, .user => {
+                self.board[i] = .{ .user = val };
+            },
+        }
     }
 
     pub fn get(self: *Sudoku, row: usize, col: usize) !u4 {
         const len = self.n * self.n;
         if (row >= len or col >= len) return SudokuError.IndexOutOfBounds;
         const i = row * len + col;
-        return self.board[i].value;
+        return switch (self.board[i]) {
+            .empty => 0,
+            .puzzle, .user => |val| val,
+        };
     }
 
     pub fn reset(self: *Sudoku) void {
-        // todo: for demo
+        std.mem.set(Cell, self.board, .empty);
+    }
+
+    pub fn newGame(self: *Sudoku) void {
+        self.reset();
+        // todo: generate a new sudoku
         const row = 2;
         const col = 2;
         const len = self.n * self.n;
         const i = row * len + col;
-        self.board[i] = Cell{
-            .value = 9,
-            .user = false,
-        };
+        self.board[i] = .{ .puzzle = 9 };
     }
 
-    pub fn print(self: Sudoku, writer: anytype) !void {
+    pub fn format(
+        self: Sudoku,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        _ = fmt;
+        _ = options;
         const len = self.n * self.n;
 
         var row: usize = 0;
@@ -89,11 +114,14 @@ pub const Sudoku = struct {
     fn printCell(self: Sudoku, writer: anytype, row: usize, col: usize) !void {
         const len = self.n * self.n;
         const i = row * len + col;
-        switch (self.board[i].value) {
-            0 => {
+        switch (self.board[i]) {
+            .empty => {
                 try writer.print(" .", .{});
             },
-            else => |val| {
+            .puzzle => |val| {
+                try writer.print(" {s}{d}{s}", .{ ansi.bold, val, ansi.normal });
+            },
+            .user => |val| {
                 try writer.print(" {d}", .{val});
             },
         }
