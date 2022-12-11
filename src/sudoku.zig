@@ -130,17 +130,44 @@ pub const Sudoku = struct {
         const len = self.n * self.n;
 
         var row: usize = 0;
-        while (row < len) : (row += 1) {
-            if (row == 0) try self.printHeader(writer);
-            try self.printRowColumn(writer, row);
-
+        {
+            // print table header
             var col: usize = 0;
+            try writer.print(" c", .{});
             while (col < len) : (col += 1) {
-                try self.printCell(writer, row, col);
+                // print subsquare divider
+                if (col % self.n == 0) try writer.print(" ", .{});
+
+                try writer.print("{d} ", .{col});
             }
             try writer.print("\n", .{});
+        }
 
-            if (row != len - 1) try self.printRowDivider(writer);
+        try writer.print("r\n", .{});
+
+        while (row < len) : (row += 1) {
+            {
+                // print column header
+                try writer.print("{d} ", .{row});
+            }
+            var col: usize = 0;
+            while (col < len) : (col += 1) {
+                const i = row * len + col;
+                // print subsquare divider
+                if (col % self.n == 0) try writer.print(" ", .{});
+
+                try switch (self.board[i]) {
+                    .empty => writer.print(".", .{}),
+                    .puzzle => |val| writer.print("{s}{d}{s}", .{ ansi.bold, val, ansi.normal }),
+                    .user => |val| writer.print("{d}", .{val}),
+                };
+
+                // print cell divider
+                if (col < len - 1) try writer.print(" ", .{});
+            }
+            try writer.print("\n", .{});
+            // print subsquare divider
+            if ((row + 1) % self.n == 0) try writer.print("\n", .{});
         }
     }
 
@@ -149,17 +176,17 @@ pub const Sudoku = struct {
         const i = row * len + col;
         switch (self.board[i]) {
             .empty => {
-                try writer.print(" .", .{});
+                try writer.print(".", .{});
             },
             .puzzle => |val| {
-                try writer.print(" {s}{d}{s}", .{ ansi.bold, val, ansi.normal });
+                try writer.print("{s}{d}{s}", .{ ansi.bold, val, ansi.normal });
             },
             .user => |val| {
-                try writer.print(" {d}", .{val});
+                try writer.print("{d}", .{val});
             },
         }
         if (col != len - 1) {
-            try writer.print(" :", .{});
+            try writer.print("  ", .{});
         }
     }
 
@@ -189,8 +216,8 @@ pub const Sudoku = struct {
 
     fn printRowColumn(_: Sudoku, writer: anytype, row: ?usize) !void {
         if (row) |x| {
-            try writer.print(" {d} *", .{x});
-        } else try writer.print("   *", .{});
+            try writer.print(" {d} >", .{x});
+        } else try writer.print("   >", .{});
     }
 
     fn printRowDivider(_: Sudoku, writer: anytype) !void {
