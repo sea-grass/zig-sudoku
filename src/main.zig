@@ -6,6 +6,7 @@
 const std = @import("std");
 const Sudoku = @import("sudoku.zig").Sudoku;
 const ansi = @import("ansi.zig");
+const readLine = @import("io.zig").readLine;
 
 const ArgError = error{
     MissingFilePath,
@@ -63,7 +64,9 @@ pub fn main() !void {
         switch (state) {
             .LoadSudoku => {
                 // todo: load from file
-                state = .Title;
+                try sudoku.newGameFromFile(input_file);
+                _ = readLine(stdin, &buffer);
+                state = .MakeGuess;
             },
             .Title => {
                 try stdout.print("This is Sudoku.\nStart a new game? (Y/n): ", .{});
@@ -114,13 +117,6 @@ pub fn main() !void {
             .Quit => unreachable,
         }
     }
-}
-
-fn readLine(reader: anytype, buffer: []u8) ?[]const u8 {
-    return reader.readUntilDelimiterOrEof(buffer, '\n') catch blk: {
-        reader.skipUntilDelimiterOrEof('\n') catch {};
-        break :blk undefined;
-    };
 }
 
 const Move = struct {

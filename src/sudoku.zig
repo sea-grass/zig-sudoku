@@ -1,5 +1,6 @@
 const std = @import("std");
 const ansi = @import("ansi.zig");
+const readLine = @import("io.zig").readLine;
 
 const CellType = enum {
     // An empty cell contains no data. Meaning, it has no user- or puzzle-supplied data.
@@ -84,6 +85,38 @@ pub const Sudoku = struct {
         const len = self.n * self.n;
         const i = row * len + col;
         self.board[i] = .{ .puzzle = 9 };
+    }
+
+    pub fn newGameFromFile(self: *Sudoku, file_path: []const u8) !void {
+        var buf: [9 * 4]u8 = undefined;
+        _ = self;
+
+        var file = try std.fs.cwd().openFile(file_path, .{ .mode = .read_only });
+        defer file.close();
+        const reader = file.reader();
+        std.debug.print("line!!()\n", .{});
+        while (readLine(reader, &buf)) |line| {
+            std.debug.print("line({s})\n", .{line});
+        }
+        // read file, line by line
+        // a well-specified sudoku should look like this
+        // 1 2 3  4 5 6  7 8 9
+        // 4 5 6  7 8 9  1 2 3
+        // 7 8 9  1 2 3  4 5 6
+        //
+        // 2 3 4  5 6 7  8 9 1
+        // 5 6 7  8 9 1  2 3 4
+        // 8 9 1  2 3 4  5 6 7
+        //
+        // 3 4 5  6 7 8  9 1 2
+        // 6 7 8  9 1 2  3 4 5
+        // 9 1 2  3 4 5  6 7 8
+        //
+        // The above Sudoku is considered complete, since all the spaces are filled.
+        // If any of the spaces are empty, they must be represented by the empty character (.).
+        // A row with some empty spots might look like this:
+        // 1 . 3  . . .  . 8 9
+
     }
 
     pub fn format(
