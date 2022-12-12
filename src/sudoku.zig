@@ -23,11 +23,37 @@ const SudokuError = error{
     CannotOverwritePuzzleValues,
 };
 
+const TableCellIterator = struct {
+    index: u8,
+    max: u8,
+    len: u8,
+    // n is the Sudoku size (for the typical 9x9, n=3)
+    pub fn init(n: u8) @This() {
+        return .{
+            .index = 0,
+            .max = n * n * n * n,
+            .len = n * n,
+        };
+    }
+
+    pub fn next(self: *@This()) ?struct { row: u8, col: u8 } {
+        if (self.index >= self.max) return null;
+
+        defer self.index += 1;
+
+        return .{
+            .col = self.index % self.len,
+            .row = self.index / self.len,
+        };
+    }
+};
+
 pub const Sudoku = struct {
     allocator: std.mem.Allocator,
     n: u8,
     board: []Cell,
-    pub fn init(allocator: std.mem.Allocator, n: u8) !Sudoku {
+    prng: std.rand.Random,
+    pub fn init(allocator: std.mem.Allocator, prng: std.rand.Random, n: u8) !Sudoku {
         if (n != 3) return SudokuError.UnsupportedBoardSize;
 
         const num_cells = n * n * n * n;
@@ -39,6 +65,7 @@ pub const Sudoku = struct {
             .allocator = allocator,
             .n = n,
             .board = board,
+            .prng = prng,
         };
     }
 
@@ -79,11 +106,17 @@ pub const Sudoku = struct {
     pub fn newGame(self: *Sudoku) void {
         self.reset();
         // todo: generate a new sudoku
-        const row = 2;
-        const col = 2;
         const len = self.n * self.n;
-        const i = row * len + col;
-        self.board[i] = .{ .puzzle = 9 };
+        var cells_it = self.cells();
+        while (cells_it.next()) |pos| {
+            std.debug.print("{any}\n", .{pos});
+            const i = pos.row * len + pos.col;
+            self.board[i] = .{ .puzzle = self.prng.intRangeAtMost(u4, 1, 9) };
+        }
+    }
+
+    fn cells(self: @This()) TableCellIterator {
+        return TableCellIterator.init(self.n);
     }
 
     pub fn format(

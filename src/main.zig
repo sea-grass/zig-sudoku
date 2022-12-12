@@ -9,8 +9,14 @@ const ansi = @import("ansi.zig");
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
+    var prng = std.rand.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        try std.os.getrandom(std.mem.asBytes(&seed));
+        break :blk seed;
+    });
+    const rand = prng.random();
 
-    var sudoku = try Sudoku.init(allocator, 3);
+    var sudoku = try Sudoku.init(allocator, rand, 3);
     defer sudoku.deinit();
 
     const stdout = std.io.getStdOut().writer();
