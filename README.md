@@ -8,7 +8,7 @@
 - [X] visual representation
 - [X] grid system to identify cells and make moves
 - [X] user can input numbers and erase numbers (but cannot overwrite those from the initial board)
-- [ ] load puzzle from file
+- [X] load puzzle from file
 - [ ] generate printable document from a sudoku
 - [ ] player-supplied notes per-cell (scratchpad)
 - [ ] warn player on illegal moves

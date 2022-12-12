@@ -71,7 +71,6 @@ pub fn main() !void {
             .LoadSudoku => {
                 // todo: load from file
                 try sudoku.newGameFromFile(input_file);
-                _ = readLine(stdin, &buffer);
                 state = .MakeGuess;
             },
             .Title => {

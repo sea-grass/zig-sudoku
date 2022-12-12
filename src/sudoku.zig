@@ -120,36 +120,78 @@ pub const Sudoku = struct {
         return TableCellIterator.init(self.n);
     }
 
+    // read file, line by line, and populate the sudoku cells
+    // a well-specified sudoku should look like this
+    // 1 2 3  4 5 6  7 8 9
+    // 4 5 6  7 8 9  1 2 3
+    // 7 8 9  1 2 3  4 5 6
+    //
+    // 2 3 4  5 6 7  8 9 1
+    // 5 6 7  8 9 1  2 3 4
+    // 8 9 1  2 3 4  5 6 7
+    //
+    // 3 4 5  6 7 8  9 1 2
+    // 6 7 8  9 1 2  3 4 5
+    // 9 1 2  3 4 5  6 7 8
+    //
+    // The above Sudoku is considered complete, since all the spaces are filled.
+    // If any of the spaces are empty, they must be represented by the empty character (.).
+    // A row with some empty spots might look like this:
+    // 1 . 3  . . .  . 8 9
+    //
+    // Useful terminology for parsing:
+    // The `puzzle` is divided into `n` `lines`, each containing `n` chunks,
+    // where every `n`th line is followed by a blank line.
     pub fn newGameFromFile(self: *Sudoku, file_path: []const u8) !void {
         var buf: [9 * 4]u8 = undefined;
-        _ = self;
 
         var file = try std.fs.cwd().openFile(file_path, .{ .mode = .read_only });
         defer file.close();
-        const reader = file.reader();
-        std.debug.print("line!!()\n", .{});
-        while (readLine(reader, &buf)) |line| {
-            std.debug.print("line({s})\n", .{line});
-        }
-        // read file, line by line
-        // a well-specified sudoku should look like this
-        // 1 2 3  4 5 6  7 8 9
-        // 4 5 6  7 8 9  1 2 3
-        // 7 8 9  1 2 3  4 5 6
-        //
-        // 2 3 4  5 6 7  8 9 1
-        // 5 6 7  8 9 1  2 3 4
-        // 8 9 1  2 3 4  5 6 7
-        //
-        // 3 4 5  6 7 8  9 1 2
-        // 6 7 8  9 1 2  3 4 5
-        // 9 1 2  3 4 5  6 7 8
-        //
-        // The above Sudoku is considered complete, since all the spaces are filled.
-        // If any of the spaces are empty, they must be represented by the empty character (.).
-        // A row with some empty spots might look like this:
-        // 1 . 3  . . .  . 8 9
 
+        const reader = file.reader();
+        const len = self.n * self.n;
+
+        // We expect one character per number and one character for every
+        // space between each number.
+        const expected_chunk_len = self.n + self.n - 1;
+
+        var block: usize = 0;
+        while (block < self.n) : (block += 1) {
+            var row: usize = block * self.n;
+            var max_row = row + self.n;
+
+            while (row < max_row) : (row += 1) {
+                if (readLine(reader, &buf)) |line| {
+                    // read and set all cols in this row
+                    var row_it = std.mem.split(u8, line, "  ");
+
+                    var col: usize = 0;
+                    while (row_it.next()) |chunk| {
+                        if (chunk.len != expected_chunk_len) return error.MalformedSudokuFile;
+
+                        var square_it = std.mem.split(u8, chunk, " ");
+                        while (square_it.next()) |cell| {
+                            const i = row * len + col;
+                            self.board[i] = if (std.mem.eql(u8, cell, ".")) .empty else .{ .puzzle = std.fmt.parseInt(u4, cell, 10) catch {
+                                return error.MalformedSudokuFile;
+                            } };
+
+                            col += 1;
+                        }
+                    }
+                } else unreachable;
+            }
+
+            if (block < self.n - 1) {
+                if (readLine(reader, &buf)) |line| {
+                    _ = line;
+                    // ensure this is a blank line
+                } else unreachable;
+            }
+        }
+
+        // expect the rest of the file to be empty
+        if (readLine(reader, &buf)) |_| unreachable;
     }
 
     pub fn format(
@@ -202,59 +244,6 @@ pub const Sudoku = struct {
             // print subsquare divider
             if ((row + 1) % self.n == 0) try writer.print("\n", .{});
         }
-    }
-
-    fn printCell(self: Sudoku, writer: anytype, row: usize, col: usize) !void {
-        const len = self.n * self.n;
-        const i = row * len + col;
-        switch (self.board[i]) {
-            .empty => {
-                try writer.print(".", .{});
-            },
-            .puzzle => |val| {
-                try writer.print("{s}{d}{s}", .{ ansi.bold, val, ansi.normal });
-            },
-            .user => |val| {
-                try writer.print("{d}", .{val});
-            },
-        }
-        if (col != len - 1) {
-            try writer.print("  ", .{});
-        }
-    }
-
-    fn printHeader(self: Sudoku, writer: anytype) !void {
-        const num_cols = self.n * self.n;
-
-        try writer.print("    ", .{});
-        {
-            var col: usize = 0;
-            while (col < num_cols) : (col += 1) {
-                if (col == num_cols - 1) {
-                    try writer.print(" {d}", .{col});
-                } else try writer.print(" {d}  ", .{col});
-            }
-            try writer.print("\n", .{});
-        }
-
-        try writer.print("    ", .{});
-        {
-            var col: usize = 0;
-            while (col < num_cols) : (col += 1) {
-                try writer.print(" *  ", .{});
-            }
-            try writer.print("\n", .{});
-        }
-    }
-
-    fn printRowColumn(_: Sudoku, writer: anytype, row: ?usize) !void {
-        if (row) |x| {
-            try writer.print(" {d} >", .{x});
-        } else try writer.print("   >", .{});
-    }
-
-    fn printRowDivider(_: Sudoku, writer: anytype) !void {
-        try writer.print("\n", .{});
     }
 
     test "init" {
