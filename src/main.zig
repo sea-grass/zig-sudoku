@@ -22,7 +22,7 @@ pub fn main() !void {
     });
     const rand = prng.random();
 
-    var sudoku = try Sudoku.init(allocator, rand, 3);
+    var sudoku = try Sudoku.init(allocator, rand);
     defer sudoku.deinit();
 
     const stdout = std.io.getStdOut().writer();
