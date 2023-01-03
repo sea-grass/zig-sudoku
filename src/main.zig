@@ -88,7 +88,7 @@ pub fn main() !void {
                 }
             },
             .StartGame => {
-                sudoku.newGame();
+                try sudoku.newGame();
                 state = .MakeGuess;
             },
             .ShowHelpText => {

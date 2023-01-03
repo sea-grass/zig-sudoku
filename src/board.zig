@@ -23,12 +23,36 @@ pub fn Board(comptime N: u32) type {
         pub fn get_valid_moves(self: @This(), board: Board(N)) ![]CellNumber {
             var seen: [M]bool = .{false} ** 9;
             {
-                var row = try board.get_row(self.row);
-                defer board.allocator.free(row);
-                for (row) |cell| switch (cell.data) {
+                var slice = try board.get_row(self.row);
+                defer board.allocator.free(slice);
+                for (slice) |cell| switch (cell.data) {
                     .empty => continue,
-                    .user => |x| seen[x - 1] = true,
-                    .puzzle => |x| seen[x - 1] = true,
+                    .user, .puzzle => |x| {
+                        std.debug.print("see {d} ", .{x});
+                        seen[x - 1] = true;
+                    },
+                };
+            }
+            {
+                var slice = try board.get_col(self.col);
+                defer board.allocator.free(slice);
+                for (slice) |cell| switch (cell.data) {
+                    .empty => continue,
+                    .user, .puzzle => |x| {
+                        std.debug.print("see {d} ", .{x});
+                        seen[x - 1] = true;
+                    },
+                };
+            }
+            {
+                var slice = try board.get_square(self.square);
+                defer board.allocator.free(slice);
+                for (slice) |cell| switch (cell.data) {
+                    .empty => continue,
+                    .user, .puzzle => |x| {
+                        std.debug.print("see {d} ", .{x});
+                        seen[x - 1] = true;
+                    },
                 };
             }
 
@@ -198,7 +222,7 @@ pub fn Board(comptime N: u32) type {
 
             // We expect one character per number and one character for every
             // space between each number.
-            const expected_chunk_len = N + N - 1;
+            const expected_chunk_len = 2 * N - 1;
 
             var block: usize = 0;
             while (block < N) : (block += 1) {

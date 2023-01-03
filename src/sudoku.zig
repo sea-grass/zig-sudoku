@@ -1,4 +1,5 @@
 pub const Board = @import("board.zig").Board;
+pub const DecisionTree = @import("DecisionTree.zig");
 
 const std = @import("std");
 const ansi = @import("ansi.zig");
@@ -61,11 +62,34 @@ pub const Sudoku = struct {
         }
     }
 
-    pub fn newGame(self: *Sudoku) void {
+    pub fn newGame(self: *Sudoku) !void {
         self.reset();
+        var dt = DecisionTree.init(self.allocator);
+        defer dt.deinit();
         // todo: generate a new sudoku
-        inline for (self.board.cells) |*cell| {
-            cell.data = .{ .puzzle = self.prng.intRangeAtMost(u4, 1, 9) };
+        for (self.board.cells) |*cell| {
+            const valid_moves = try cell.get_valid_moves(self.board);
+            defer self.board.allocator.free(valid_moves);
+            std.debug.print("rc({d},{d}) can be {any}\n", .{ cell.row, cell.col, valid_moves });
+            switch (valid_moves.len) {
+                0 => {
+                    // todo: backtrack
+                    std.debug.print("Cannot fill this cell.\n", .{});
+                },
+                1 => {
+                    cell.data = .{ .puzzle = valid_moves[0] };
+                },
+                else => {
+                    // pick a random one and add an entry to the decision tree
+                    const move_index = self.prng.intRangeAtMost(usize, 0, valid_moves.len - 1);
+                    cell.data = .{ .puzzle = valid_moves[move_index] };
+                    // todo: add entry to decision tree
+                },
+            }
+            std.debug.print("rc({d},{d}) is now {d}\n", .{ cell.row, cell.col, switch (cell.data) {
+                .puzzle, .user => |val| val,
+                else => 99,
+            } });
         }
     }
 
