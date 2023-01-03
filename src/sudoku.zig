@@ -1,5 +1,5 @@
 pub const Board = @import("board.zig").Board;
-pub const DecisionTree = @import("DecisionTree.zig");
+pub const DecisionTree = @import("decision_tree.zig").DecisionTree;
 
 const std = @import("std");
 const ansi = @import("ansi.zig");
@@ -12,6 +12,12 @@ const SudokuError = error{
     InvalidValue,
     IndexOutOfBounds,
     CannotOverwritePuzzleValues,
+};
+
+const Move = struct {
+    row: u32,
+    col: u32,
+    value: u32,
 };
 
 pub const Sudoku = struct {
@@ -64,7 +70,7 @@ pub const Sudoku = struct {
 
     pub fn newGame(self: *Sudoku) !void {
         self.reset();
-        var dt = DecisionTree.init(self.allocator);
+        var dt = DecisionTree(Move).init(self.allocator);
         defer dt.deinit();
         // todo: generate a new sudoku
         for (self.board.cells) |*cell| {
